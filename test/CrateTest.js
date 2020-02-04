@@ -5,7 +5,8 @@ const sinon = require('sinon')
 const path = require('path')
 const os = require('os')
 const mongoose = require('mongoose')
-const mockgoose = require('mockgoose')
+var Mockgoose = require('mockgoose').Mockgoose;
+var mockgoose = new Mockgoose(mongoose);
 const async = require('async')
 const Crate = require('../lib/Crate')
 const createSchema = require('./fixtures/StubSchema')
@@ -16,17 +17,31 @@ const describe = require('mocha').describe
 const before = require('mocha').before
 const it = require('mocha').it
 
+// mockgoose.prepareStorage().then(() => {
+//   mongoose.connect('mongodb://crate/testdb');
+//   mongoose.connection.on('connected', () => {  
+//     console.log('db connection is now open');
+//   }); 
+// });
+
+function timeout(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+
 describe('Crate', () => {
   before((done) => {
-    mockgoose(mongoose).then(() => {
-      mongoose.Promise = Promise
-      mongoose.connect('mongodb://crate/testdb', done)
-    })
+    mockgoose.prepareStorage().then(() => {
+      mongoose.connect('mongodb://crate/testdb');
+      mongoose.connection.on('connected', () => {  
+        console.log('db connection is now open');
+      }); 
+    });
+    done()
   })
 
   it('should attach a file', (done) => {
     const file = path.resolve(path.join(__dirname, '.', 'fixtures', 'node_js_logo.png'))
-
     createSchema((StubSchema) => {
       var model = new StubSchema()
       model.attach('file', {
@@ -175,18 +190,18 @@ describe('Crate', () => {
 
   it('should remove attachment when model is deleted', (done) => {
     const file = path.resolve(path.join(__dirname, '.', 'fixtures', 'node_js_logo.png'))
-
+  
     createSchema((StubSchema, storage) => {
       var model = new StubSchema()
       model.attach('file', {
         path: file
-      }, (error) => {
+      }, async (error) => {
         should(error).not.ok
 
         storage.remove.callCount.should.equal(0)
 
         model.remove()
-
+        await timeout(1);
         storage.remove.callCount.should.equal(1)
 
         done()
@@ -206,11 +221,11 @@ describe('Crate', () => {
         should(error).not.ok
 
         // save the model
-        model.save((error) => {
+        model.save( (error) => {
           should(error).not.ok
 
           // load a new copy of the model
-          StubSchema.findById(model.id, (error, result) => {
+          StubSchema.findById(model.id, async (error, result) => {
             should(error).not.ok;
 
             // should not be the same object
@@ -223,6 +238,7 @@ describe('Crate', () => {
             storage.remove.callCount.should.equal(0)
 
             model.remove()
+            await timeout(1);
 
             storage.remove.callCount.should.equal(1)
 
@@ -245,14 +261,15 @@ describe('Crate', () => {
 
         model.attach('files', {
           path: file
-        }, error => {
+        }, async error => {
           should(error).not.ok
+          await timeout(1);
           storage.remove.callCount.should.equal(0)
 
-          model.remove(error => {
+          model.remove(async error => {
             should(error).not.ok
+            await timeout(1);
             storage.remove.callCount.should.equal(2)
-
             done()
           })
         })
@@ -277,7 +294,8 @@ describe('Crate', () => {
           storage.remove.callCount.should.equal(0)
 
           return model.remove()
-        }).then(() => {
+        }).then(async () => {
+          await timeout(1);
           storage.remove.callCount.should.equal(2)
 
           done()
@@ -330,9 +348,9 @@ describe('Crate', () => {
         model.save(callback)
       }]
 
-      async.series(tasks, (error) => {
+      async.series(tasks, async (error) => {
         should(error).not.ok
-
+        await timeout(1);
         // should have removed the old attachment
         storage.remove.callCount.should.equal(1)
 

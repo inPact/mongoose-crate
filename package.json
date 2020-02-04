@@ -28,17 +28,17 @@
   "dependencies": {
     "async": "^2.1.4",
     "check-types": "^7.0.0",
-    "mmmagic": "^0.4.4"
+    "mmmagic": "^0.5.3"
   },
   "devDependencies": {
     "coveralls": "^2.8",
     "istanbul": "^0.4.3",
     "mocha": "^3.2.0",
-    "mockgoose": "^6.0.8",
-    "mongoose": "^4.7.0",
+    "mockgoose": "^8.0.4",
+    "mongoose": "^5.8.11",
     "pre-commit": "^1.0.6",
     "should": "^11.1.1",
-    "sinon": "^1.9",
+    "sinon": "^8.1.1",
     "standard": "^8.6.0"
   },
   "pre-commit": [
